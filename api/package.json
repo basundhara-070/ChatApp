@@ -8,5 +8,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",
     "ws": "^8.17.0"
+  },
+  "scripts": {
+    "start": "node index.js"
   }
 }
