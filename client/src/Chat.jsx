@@ -1,219 +1,66 @@
-// import { useEffect, useState, useContext, useRef } from "react";
-// import Avatar from "./Avatar";
-// import uniqBy from 'lodash/uniqBy';
-// import { UserContext } from "./context";
-// import Logo from "./Logo";
-// import axios from "axios";
-
-// export default function Chat() {
-//     const [ws, setWs] = useState(null);
-//     const [onlinePeople, setOnlinePeople] = useState({});
-//     const [offlinePeople, setOfflinePeople] = useState({});
-//     const [selectedUserId, setSelectedUserId] = useState(null);
-//     const { username, id } = useContext(UserContext);
-//     const [newMessageText, setNewMessageText] = useState('');
-//     const [messages, setMessages] = useState([]);
-//     const divUnderMessages=useRef();
-
-//     useEffect(() => {
-        
-//        connectToWs();
-//     }, []);
-
-//     function connectToWs(){
-//         const ws = new WebSocket('ws://localhost:4000');
-//         setWs(ws);
-//         ws.addEventListener('message', handleMessage);
-//         ws.addEventListener('close',()=>{
-//             setTimeout(()=>{
-//                 console.log('Disconnected. Trying to reconnect.');
-//                 connectToWs();
-//             },1000);
-//     });
-//     }
-
-//     function showOnlinePeople(peopleArray) {
-//         const people = {};
-//         peopleArray.forEach(({ userId, username }) => {
-//             people[userId] = username;
-//         });
-//         setOnlinePeople(people);
-//     }
-
-//     function handleMessage(ev) {
-//         const messageData = JSON.parse(ev.data);
-//         console.log(messageData);
-//         console.log({ev,messageData})
-//         if ('online' in messageData) {
-//             showOnlinePeople(messageData.online);
-//         } else if('text' in messageData){
-//             setMessages(prev => ([...prev, {...messageData }]));
-//         }
-//     }
-
-//     function sendMessage(ev) {
-//         ev.preventDefault();
-//         ws.send(JSON.stringify({
-            
-//                 recipient: selectedUserId,
-//                 text: newMessageText,
-           
-//         }));
-//         setNewMessageText('');
-//         console.log("message sent")
-//         setMessages(prev => ([...prev, {
-//             text: newMessageText, 
-//             sender:id,
-//             recipient:selectedUserId,
-//             _id: Date.now(),
-//         }]));
-       
-//     }
-//  useEffect(()=>{
-//     const div=divUnderMessages.current;
-//     console.log(div)
-//     if(div){
-//         div.scrollIntoView({behavior:'smooth',block:'end'})
-//     }
-   
-//  },[messages]);
-
-//  useEffect(()=>{
-//     axios.get('/people').then(res=>{
-//         const offlinePeople= res.data
-//         .filter(p=>p._id !==id)
-//         .filter(p=> !Object.keys(onlinePeople).includes(p._id));
-//         console.log(offlinePeople)
-//         setOfflinePeople(offlinePeople);
-//     });
-//  },
-//  [onlinePeople])
-
-//  useEffect(()=>{
-//     if(selectedUserId){
-//         axios.get('/messages/'+selectedUserId).then(res=>{
-           
-//             setMessages(res.data);
-//         })
-//     }
-//  },[selectedUserId])
-//     const onlinePeopleExclOurUser = { ...onlinePeople };
-//     delete onlinePeopleExclOurUser[id];
-
-//     const messageWithoutDupes= uniqBy(messages, 'id');
-
-//     return (
-//         <div className="flex h-screen">
-//             <div className="bg-white w-1/3">
-//                 <Logo />
-//                 {Object.keys(onlinePeopleExclOurUser).map(userId => (
-//                     <div 
-//                         key={userId}
-//                         onClick={() => { setSelectedUserId(userId); }} 
-//                         className={`border-b border-gray-100 flex items-center gap-2 cursor-pointer ${userId === selectedUserId ? 'bg-blue-50' : ''}`}>
-//                         {userId === selectedUserId && (
-//                             <div className="w-1 bg-blue-500 h-12 rounded-r-md"></div>         
-//                         )}
-//                         <div className="flex gap-2 py-2 pl-4 items-center">
-//                             <Avatar online={true} username={onlinePeople[userId]} userId={userId} />
-//                             <span className="text-gray-800">{onlinePeople[userId]}</span>     
-//                         </div>
-//                     </div>
-//                 ))}
-//             </div>
-//             <div className="flex flex-col bg-blue-50 w-2/3 p-2">
-//                 <div className="flex-grow">
-//                     {!selectedUserId && (
-//                         <div className="flex h-full items-center justify-center text-gray-300">&larr; Select a person</div>
-//                     )}
-//                     {!!selectedUserId && (
-//                         <div className="mb-4 h-full">
-
-//                         <div className="relative h-full">
-//                         <div className="overflow-y-scroll absolute inset-0">
-                        
-//                             {messageWithoutDupes.map(message => (
-//                                 <div key={message._id} className={(message.sender===id? 'text-right':'text-left')}>
-//                                 <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " + (message.sender===id?'bg-blue-500 text-white':'bg-white text-gray-500')}>
-                                
-//                                 {message.text}</div></div>
-//                             ))}
-//                         <div ref={divUnderMessages}></div>
-//                         </div>
-//                         </div>
-//                         </div>
-//                     )}
-//                 </div>
-//                 {!!selectedUserId && (
-//                     <form className="flex gap-2" onSubmit={sendMessage}>
-//                         <input 
-//                             type="text" 
-//                             value={newMessageText || ''} 
-//                             onChange={ev => setNewMessageText(ev.target.value)}
-//                             className="bg-white border flex-grow p-2 rounded-sm" 
-//                             placeholder="Type your message here" 
-//                         />
-//                         <button type="submit" className="bg-blue-500 p-2 text-white rounded-sm">
-//                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-//                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-//                             </svg>
-//                         </button>
-//                     </form>
-//                 )}
-//             </div>
-//         </div>
-//     );
-// }
-
-import {useContext, useEffect, useRef, useState} from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
-import {UserContext} from "./context.jsx";
-import {uniqBy} from "lodash";
+import { UserContext } from "./UserContext.jsx";
+import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "./Contact";
 
 export default function Chat() {
-  const [ws,setWs] = useState(null);
-  const [onlinePeople,setOnlinePeople] = useState({});
-  const [offlinePeople,setOfflinePeople] = useState({});
-  const [selectedUserId,setSelectedUserId] = useState(null);
-  const [newMessageText,setNewMessageText] = useState('');
-  const [messages,setMessages] = useState([]);
-  const {username,id,setId,setUsername} = useContext(UserContext);
+  const [ws, setWs] = useState(null);
+  const [onlinePeople, setOnlinePeople] = useState({});
+  const [offlinePeople, setOfflinePeople] = useState({});
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [newMessageText, setNewMessageText] = useState('');
+  const [messages, setMessages] = useState([]);
+  const { username, id, setId, setUsername } = useContext(UserContext);
   const divUnderMessages = useRef();
+  const messageQueue = useRef([]);
+
   useEffect(() => {
     connectToWs();
   }, [selectedUserId]);
+
   function connectToWs() {
-    const ws = new WebSocket('ws://localhost:4000');
+    const ws = new WebSocket('ws://localhost:4040');
     setWs(ws);
+
+    ws.addEventListener('open', () => {
+      console.log('WebSocket connected');
+      // Send any queued messages
+      messageQueue.current.forEach(msg => ws.send(msg));
+      messageQueue.current = [];
+    });
+
     ws.addEventListener('message', handleMessage);
     ws.addEventListener('close', () => {
+      console.log('WebSocket disconnected. Trying to reconnect.');
       setTimeout(() => {
-        console.log('Disconnected. Trying to reconnect.');
         connectToWs();
       }, 1000);
     });
   }
+
   function showOnlinePeople(peopleArray) {
     const people = {};
-    peopleArray.forEach(({userId,username}) => {
+    peopleArray.forEach(({ userId, username }) => {
       people[userId] = username;
     });
     setOnlinePeople(people);
   }
+
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
-    console.log({ev,messageData});
+    console.log({ ev, messageData });
     if ('online' in messageData) {
       showOnlinePeople(messageData.online);
     } else if ('text' in messageData) {
       if (messageData.sender === selectedUserId) {
-        setMessages(prev => ([...prev, {...messageData}]));
+        setMessages(prev => ([...prev, { ...messageData }]));
       }
     }
   }
+
   function logout() {
     axios.post('/logout').then(() => {
       setWs(null);
@@ -221,27 +68,37 @@ export default function Chat() {
       setUsername(null);
     });
   }
+
   function sendMessage(ev, file = null) {
     if (ev) ev.preventDefault();
-    ws.send(JSON.stringify({
+    
+    const message = JSON.stringify({
       recipient: selectedUserId,
       text: newMessageText,
       file,
-    }));
-    if (file) {
-      axios.get('/messages/'+selectedUserId).then(res => {
-        setMessages(res.data);
-      });
+    });
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(message);
+      if (file) {
+        axios.get('/messages/' + selectedUserId).then(res => {
+          setMessages(res.data);
+        });
+      } else {
+        setNewMessageText('');
+        setMessages(prev => ([...prev, {
+          text: newMessageText,
+          sender: id,
+          recipient: selectedUserId,
+          _id: Date.now(),
+        }]));
+      }
     } else {
-      setNewMessageText('');
-      setMessages(prev => ([...prev,{
-        text: newMessageText,
-        sender: id,
-        recipient: selectedUserId,
-        _id: Date.now(),
-      }]));
+      // Queue the message if WebSocket is not open
+      messageQueue.current.push(message);
     }
   }
+
   function sendFile(ev) {
     const reader = new FileReader();
     reader.readAsDataURL(ev.target.files[0]);
@@ -256,7 +113,7 @@ export default function Chat() {
   useEffect(() => {
     const div = divUnderMessages.current;
     if (div) {
-      div.scrollIntoView({behavior:'smooth', block:'end'});
+      div.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [messages]);
 
@@ -275,13 +132,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (selectedUserId) {
-      axios.get('/messages/'+selectedUserId).then(res => {
+      axios.get('/messages/' + selectedUserId).then(res => {
         setMessages(res.data);
       });
     }
   }, [selectedUserId]);
 
-  const onlinePeopleExclOurUser = {...onlinePeople};
+  const onlinePeopleExclOurUser = { ...onlinePeople };
   delete onlinePeopleExclOurUser[id];
 
   const messagesWithoutDupes = uniqBy(messages, '_id');
@@ -297,7 +154,7 @@ export default function Chat() {
               id={userId}
               online={true}
               username={onlinePeopleExclOurUser[userId]}
-              onClick={() => {setSelectedUserId(userId);console.log({userId})}}
+              onClick={() => { setSelectedUserId(userId); console.log({ userId }) }}
               selected={userId === selectedUserId} />
           ))}
           {Object.keys(offlinePeople).map(userId => (
@@ -333,8 +190,8 @@ export default function Chat() {
             <div className="relative h-full">
               <div className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
                 {messagesWithoutDupes.map(message => (
-                  <div key={message._id} className={(message.sender === id ? 'text-right': 'text-left')}>
-                    <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " +(message.sender === id ? 'bg-blue-500 text-white':'bg-white text-gray-500')}>
+                  <div key={message._id} className={(message.sender === id ? 'text-right' : 'text-left')}>
+                    <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " + (message.sender === id ? 'bg-blue-500 text-white' : 'bg-white text-gray-500')}>
                       {message.text}
                       {message.file && (
                         <div className="">
@@ -360,7 +217,7 @@ export default function Chat() {
                    value={newMessageText}
                    onChange={ev => setNewMessageText(ev.target.value)}
                    placeholder="Type your message here"
-                   className="bg-white flex-grow border rounded-sm p-2"/>
+                   className="bg-white flex-grow border rounded-sm p-2" />
             <label className="bg-blue-200 p-2 text-gray-600 cursor-pointer rounded-sm border border-blue-200">
               <input type="file" className="hidden" onChange={sendFile} />
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
