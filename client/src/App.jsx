@@ -1,6 +1,6 @@
 import axios from "axios";
 import {UserContextProvider} from "./UserContext";
-import Routes from "./Routes";
+import Routes from "./routes";
 
 function App() {
   axios.defaults.baseURL = 'https://flatchat-backend.onrender.com/';
