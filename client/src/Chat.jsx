@@ -22,7 +22,7 @@ export default function Chat() {
   }, [selectedUserId]);
 
   function connectToWs() {
-    const ws = new WebSocket('ws://https://flatchat-backend.onrender.com/');
+    const ws = new WebSocket('wss://flatchat-backend.onrender.com');
     setWs(ws);
 
     ws.addEventListener('open', () => {
