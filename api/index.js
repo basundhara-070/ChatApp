@@ -167,17 +167,26 @@ wss.on('connection', (connection, req) => {
     const messageData = JSON.parse(message.toString());
     const { recipient, text, file } = messageData;
     let filename = null;
+    
     if (file) {
-      console.log('size', file.data.length);
+      console.log('File size:', file.data.length); // Debug file size
+  
       const parts = file.name.split('.');
       const ext = parts[parts.length - 1];
       filename = Date.now() + '.' + ext;
-      const path = __dirname + '/uploads/' + filename;
-      const bufferData = new Buffer(file.data.split(',')[1], 'base64');
-      fs.writeFile(path, bufferData, () => {
-        console.log('file saved:' + path);
+  
+      const filePath = __dirname + '/uploads/' + filename;
+      const bufferData = Buffer.from(file.data, 'base64'); // Use Buffer.from to create a buffer from base64 string
+  
+      fs.writeFile(filePath, bufferData, err => {
+        if (err) {
+          console.error('Error saving file:', err);
+        } else {
+          console.log('File saved:', filePath);
+        }
       });
     }
+  
     if (recipient && (text || file)) {
       const messageDoc = await Message.create({
         sender: connection.userId,
@@ -185,7 +194,8 @@ wss.on('connection', (connection, req) => {
         text,
         file: file ? filename : null,
       });
-      console.log('created message');
+      console.log('Message created:', messageDoc);
+  
       [...wss.clients]
         .filter(c => c.userId === recipient)
         .forEach(c => c.send(JSON.stringify({
@@ -197,6 +207,7 @@ wss.on('connection', (connection, req) => {
         })));
     }
   });
+
 
   // notify everyone about online people (when someone connects)
   notifyAboutOnlinePeople();

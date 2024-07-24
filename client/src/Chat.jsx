@@ -100,15 +100,18 @@ export default function Chat() {
   }
 
   function sendFile(ev) {
+    const file = ev.target.files[0];
     const reader = new FileReader();
-    reader.readAsDataURL(ev.target.files[0]);
+    reader.readAsDataURL(file);
     reader.onload = () => {
-      sendMessage(null, {
-        name: ev.target.files[0].name,
-        data: reader.result,
-      });
+      const fileData = {
+        name: file.name,
+        data: reader.result.split(',')[1], // Base64 encoded data
+      };
+      sendMessage(null, fileData);
     };
   }
+  
 
   useEffect(() => {
     const div = divUnderMessages.current;
