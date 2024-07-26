@@ -26,7 +26,10 @@ mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopol
   app.use(cookieParser());
   app.use(cors({
     credentials: true,
-    origin: process.env.CLIENT_URL,
+    origin: [
+      'http://localhost:5173',  // Development origin
+      'https://flat-chat.vercel.app'  // Production origin
+    ],
   }));
   
   async function getUserDataFromRequest(req) {
