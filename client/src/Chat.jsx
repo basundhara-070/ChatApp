@@ -1,66 +1,52 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import Avatar from "./Avatar";
 import Logo from "./Logo";
-import { UserContext } from "./UserContext.jsx";
-import { uniqBy } from "lodash";
+import {UserContext} from "./UserContext.jsx";
+import {uniqBy} from "lodash";
 import axios from "axios";
 import Contact from "./Contact";
 
 export default function Chat() {
-  const [ws, setWs] = useState(null);
-  const [onlinePeople, setOnlinePeople] = useState({});
-  const [offlinePeople, setOfflinePeople] = useState({});
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [newMessageText, setNewMessageText] = useState('');
-  const [messages, setMessages] = useState([]);
-  const { username, id, setId, setUsername } = useContext(UserContext);
+  const [ws,setWs] = useState(null);
+  const [onlinePeople,setOnlinePeople] = useState({});
+  const [offlinePeople,setOfflinePeople] = useState({});
+  const [selectedUserId,setSelectedUserId] = useState(null);
+  const [newMessageText,setNewMessageText] = useState('');
+  const [messages,setMessages] = useState([]);
+  const {username,id,setId,setUsername} = useContext(UserContext);
   const divUnderMessages = useRef();
-  const messageQueue = useRef([]);
-
   useEffect(() => {
     connectToWs();
   }, [selectedUserId]);
-
   function connectToWs() {
     const ws = new WebSocket('wss://flatchat-backend.onrender.com');
     setWs(ws);
-
-    ws.addEventListener('open', () => {
-      console.log('WebSocket connected');
-      // Send any queued messages
-      messageQueue.current.forEach(msg => ws.send(msg));
-      messageQueue.current = [];
-    });
-
     ws.addEventListener('message', handleMessage);
     ws.addEventListener('close', () => {
-      console.log('WebSocket disconnected. Trying to reconnect.');
       setTimeout(() => {
+        console.log('Disconnected. Trying to reconnect.');
         connectToWs();
       }, 1000);
     });
   }
-
   function showOnlinePeople(peopleArray) {
     const people = {};
-    peopleArray.forEach(({ userId, username }) => {
+    peopleArray.forEach(({userId,username}) => {
       people[userId] = username;
     });
     setOnlinePeople(people);
   }
-
   function handleMessage(ev) {
     const messageData = JSON.parse(ev.data);
-    console.log({ ev, messageData });
+    console.log({ev,messageData});
     if ('online' in messageData) {
       showOnlinePeople(messageData.online);
     } else if ('text' in messageData) {
       if (messageData.sender === selectedUserId) {
-        setMessages(prev => ([...prev, { ...messageData }]));
+        setMessages(prev => ([...prev, {...messageData}]));
       }
     }
   }
-
   function logout() {
     axios.post('/logout').then(() => {
       setWs(null);
@@ -68,55 +54,42 @@ export default function Chat() {
       setUsername(null);
     });
   }
-
   function sendMessage(ev, file = null) {
     if (ev) ev.preventDefault();
-    
-    const message = JSON.stringify({
+    ws.send(JSON.stringify({
       recipient: selectedUserId,
       text: newMessageText,
       file,
-    });
-
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(message);
-      if (file) {
-        axios.get('/messages/' + selectedUserId).then(res => {
-          setMessages(res.data);
-        });
-      } else {
-        setNewMessageText('');
-        setMessages(prev => ([...prev, {
-          text: newMessageText,
-          sender: id,
-          recipient: selectedUserId,
-          _id: Date.now(),
-        }]));
-      }
+    }));
+    if (file) {
+      axios.get('/messages/'+selectedUserId).then(res => {
+        setMessages(res.data);
+      });
     } else {
-      // Queue the message if WebSocket is not open
-      messageQueue.current.push(message);
+      setNewMessageText('');
+      setMessages(prev => ([...prev,{
+        text: newMessageText,
+        sender: id,
+        recipient: selectedUserId,
+        _id: Date.now(),
+      }]));
     }
   }
-
   function sendFile(ev) {
-    const file = ev.target.files[0];
     const reader = new FileReader();
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(ev.target.files[0]);
     reader.onload = () => {
-      const fileData = {
-        name: file.name,
-        data: reader.result.split(',')[1], // Base64 encoded data
-      };
-      sendMessage(null, fileData);
+      sendMessage(null, {
+        name: ev.target.files[0].name,
+        data: reader.result,
+      });
     };
   }
-  
 
   useEffect(() => {
     const div = divUnderMessages.current;
     if (div) {
-      div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      div.scrollIntoView({behavior:'smooth', block:'end'});
     }
   }, [messages]);
 
@@ -135,13 +108,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (selectedUserId) {
-      axios.get('/messages/' + selectedUserId).then(res => {
+      axios.get('/messages/'+selectedUserId).then(res => {
         setMessages(res.data);
       });
     }
   }, [selectedUserId]);
 
-  const onlinePeopleExclOurUser = { ...onlinePeople };
+  const onlinePeopleExclOurUser = {...onlinePeople};
   delete onlinePeopleExclOurUser[id];
 
   const messagesWithoutDupes = uniqBy(messages, '_id');
@@ -157,7 +130,7 @@ export default function Chat() {
               id={userId}
               online={true}
               username={onlinePeopleExclOurUser[userId]}
-              onClick={() => { setSelectedUserId(userId); console.log({ userId }) }}
+              onClick={() => {setSelectedUserId(userId);console.log({userId})}}
               selected={userId === selectedUserId} />
           ))}
           {Object.keys(offlinePeople).map(userId => (
@@ -193,8 +166,8 @@ export default function Chat() {
             <div className="relative h-full">
               <div className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-2">
                 {messagesWithoutDupes.map(message => (
-                  <div key={message._id} className={(message.sender === id ? 'text-right' : 'text-left')}>
-                    <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " + (message.sender === id ? 'bg-blue-500 text-white' : 'bg-white text-gray-500')}>
+                  <div key={message._id} className={(message.sender === id ? 'text-right': 'text-left')}>
+                    <div className={"text-left inline-block p-2 my-2 rounded-md text-sm " +(message.sender === id ? 'bg-blue-500 text-white':'bg-white text-gray-500')}>
                       {message.text}
                       {message.file && (
                         <div className="">
@@ -220,7 +193,7 @@ export default function Chat() {
                    value={newMessageText}
                    onChange={ev => setNewMessageText(ev.target.value)}
                    placeholder="Type your message here"
-                   className="bg-white flex-grow border rounded-sm p-2" />
+                   className="bg-white flex-grow border rounded-sm p-2"/>
             <label className="bg-blue-200 p-2 text-gray-600 cursor-pointer rounded-sm border border-blue-200">
               <input type="file" className="hidden" onChange={sendFile} />
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
