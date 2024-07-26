@@ -3,7 +3,7 @@ import {UserContextProvider} from "./UserContext";
 import Routes from "./routes";
 
 function App() {
-  axios.defaults.baseURL = 'https://flatchat-backend.onrender.com/';
+  axios.defaults.baseURL = 'https://flatchat-backend.onrender.com';
   axios.defaults.withCredentials = true;
   return (
     <UserContextProvider>
