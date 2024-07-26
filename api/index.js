@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopol
   const bcryptSalt = bcrypt.genSaltSync(10);
   
   const app = express();
-  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+  app.use('/uploads', express.static(__dirname + '/uploads'));
   app.use(express.json());
   app.use(cookieParser());
   app.use(cors({
